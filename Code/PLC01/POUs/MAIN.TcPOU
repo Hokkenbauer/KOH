@@ -1,0 +1,191 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="MAIN" Id="{32cb1221-fe4b-4b7d-957b-cef8b90b2dda}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+	fbTimeChannel 				: FB_TidkanalDrift;	
+	fbAstroUr					: FB_AstroUr;
+	fbSystemTime 				: FB_SystemTime;
+	fbSwedishHolidays			: FB_SwedishHolidays;
+	fbGustavGlaadKOH			: FB_KOH;
+	
+	bActivateTimeChannel		: BOOL; // Detta är en kommentar
+	wMondayStartTime 			: WORD; // Detta är en kommentar
+	wMondayStopTime 			: WORD; // Detta är en kommentar
+	wTuesdayStartTime 			: WORD; // Detta är en kommentar
+	wTuesdayStopTime 			: WORD; // Detta är en kommentar
+	wWednesdayStartTime 		: WORD; // Detta är en kommentar
+	wWednesdayStopTime 			: WORD; // Detta är en kommentar
+	wThursdayStartTime 			: WORD; // Detta är en kommentar
+	wThursdayStopTime 			: WORD; // Detta är en kommentar
+	wFridayStartTime 			: WORD; // Detta är en kommentar
+	wFridayStopTime 			: WORD; // Detta är en kommentar
+	wSaturdayStartTime 			: WORD; // Detta är en kommentar
+	wSaturdayStopTime 			: WORD; // Detta är en kommentar
+	wSundayStartTime 			: WORD; // Detta är en kommentar
+	wSundayStopTime 			: WORD; // Detta är en kommentar
+	bTimeChannelActive			: BOOL; // Detta är en kommentar
+	bSommarTidAktiv				: BOOL; // Detta är en kommentar
+	bDetArMorktUteJustNu		: BOOL; // Detta är en kommentar
+	strSoluppgang				: STRING; // Detta är en kommentar
+	strSolnedgang				: STRING; // Detta är en kommentar
+	//dActDate					: DATE:= D#2025-3-19; 
+	dActDate					: DATE_AND_TIME; 
+	dtTheDateAndTime			: DATE_AND_TIME;
+	
+	bLangfredagACT				: BOOL;
+	bSkartorsdagACT				: BOOL;
+	bPaskDagenACT				: BOOL;
+	bPaskaftonACT				: BOOL;
+	bAnnanDagPaskACT			: BOOL;
+	bKristihimmelACT			: BOOL;
+	bPingstAftonACT				: BOOL;
+	bPingstDagenACT				: BOOL;
+	bMidsommarDagenACT			: BOOL;
+	bMidsommarAftonACT			: BOOL;
+	bHalloweenACT				: BOOL;
+	bJulaftonACT				: BOOL;
+	bJuldagenACT				: BOOL;
+	bAnnandagjulACT				: BOOL;
+	bTrettondagACT				: BOOL;
+	bNyarsaftonACT				: BOOL;
+	bNyarsdagenACT				: BOOL;
+	bForstamajACT				: BOOL;
+	bNationaldagACT				: BOOL;
+	bHelgDagAktivACT 			: BOOL;
+	bAny						: BOOL; 
+	iDay			: INT;
+	
+END_VAR
+
+VAR PERSISTENT	
+	rLatitudeOrebro				: REAL; // Detta är en kommentar
+	rLongitudeOrebro			: REAL; // Detta är en kommentar
+	iOffsetSoluppgang			: INT; // Detta är en kommentar
+	iOffsetSolnedgang			: INT; // Detta är en kommentar
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fbSystemTime();
+POU_EasterDay();
+
+fbTimeChannel(
+	bEn:= 					bActivateTimeChannel, 
+	wMondayOn:= 			wMondayStartTime, 
+	wMondayOff:= 			wMondayStopTime, 
+	wTuesdayOn:= 			wTuesdayStartTime, 
+	wTuesdayOff:= 			wTuesdayStopTime, 
+	wWednesdayOn:= 			wWednesdayStartTime, 
+	wWednesdayOff:= 		wWednesdayStopTime, 
+	wThursdayOn:= 			wThursdayStartTime, 
+	wThursdayOff:= 			wThursdayStopTime, 
+	wFridayOn:= 			wFridayStartTime, 
+	wFridayOff:= 			wFridayStopTime, 
+	wSaturdayOn:= 			wSaturdayStartTime, 
+	wSaturdayOff:= 			wSaturdayStopTime, 
+	wSundayOn:= 			wSundayStartTime, 
+	wSundayOff:= 			wSundayStopTime, 
+	bOn=> 					bTimeChannelActive);
+
+fbAstroUr(
+	rLatitude:= 			rLatitudeOrebro, // Sätt latitud för platen du ska mäta på         
+	rLongitude:= 			rLongitudeOrebro, // Sätt longitud för platsen du ska mäta på      
+	iOffsetSunrise:= 		iOffsetSoluppgang, // Förskjut soluppgången här (teoretiskt)       
+	iOffsetSunset:= 		iOffsetSolnedgang, // Förskjut solnedgången här (teoretiskt)       
+	strSunrise=> 			strSoluppgang, // Detta är det förväntade klockslaget på soluppgång
+	strSunset=> 			strSolnedgang, // Detta är det förväntade klockslaget på solnedgång
+	bSummertime=> 			bSommarTidAktiv, // Det råder sommartid, åk till stranden          
+	bDark=> 				bDetArMorktUteJustNu); // Är denna aktiv är det mörkt ute	         
+
+fbSystemTime();
+dActDate:=(fbSystemTime.dtSystemTime);
+
+fbSwedishHolidays(
+	dtActualDateAndTime=> 	dtTheDateAndTime, 
+	bLangfredag=> 			bLangfredagACT, 
+	bSkartorsdag=> 			bSkartorsdagACT, 
+	bPaskDagen=> 			bPaskDagenACT, 
+	bPaskafton=> 			bPaskaftonACT, 
+	bAnnanDagPask=> 		bAnnanDagPaskACT, 
+	bKristihimmel=> 		bKristihimmelACT, 
+	bPingstAfton=> 			bPingstAftonACT, 
+	bPingstDagen=> 			bPingstDagenACT, 
+	bMidsommarDagen=> 		bMidsommarDagenACT, 
+	bMidsommarAfton=> 		bMidsommarAftonACT, 
+	bHalloween=> 			bHalloweenACT, 
+	bJulafton=> 			bJulaftonACT, 
+	bJuldagen=> 			bJuldagenACT, 
+	bAnnandagjul=> 			bAnnandagjulACT, 
+	bTrettondag=> 			bTrettondagACT, 
+	bNyarsafton=> 			bNyarsaftonACT, 
+	bNyarsdagen=> 			bNyarsdagenACT, 
+	bForstamaj=> 			bForstamajACT, 
+	bNationaldag=> 			bNationaldagACT, 
+	bHelgDagAktiv=> 		bHelgDagAktivACT);
+
+
+iDay:=fc_Day_Of_Year(IDATE:=TO_DATE (dActDate) );
+	
+	
+	
+fbGustavGlaadKOH(
+	bEnableKOHFunction:= 			, 
+	bBlockKOHFunction:= 			, 
+	wMondayOn:= 					, 
+	wMondayOff:= 					, 
+	wTuesdayOn:= 					, 
+	wTuesdayOff:= 					, 
+	wWednesdayOn:= 					, 
+	wWednesdayOff:= 				, 
+	wThursdayOn:= 					, 
+	wThursdayOff:= 					, 
+	wFridayOn:= 					, 
+	wFridayOff:= 					, 
+	wSaturdayOn:= 					, 
+	wSaturdayOff:= 					, 
+	wSundayOn:= 					, 
+	wSundayOff:= 					, 
+	diSystemCalcSetpoint:= 			, 
+	diDownRampTime:= 				, 
+	diSPEveningReduction:= 			, 
+	diSPWeekendReduction:= 			, 
+	diSPHolidayReduction:= 			, 
+	diSPExceptionReduction:= 		, 
+	diAllowedMinRoomTemp:= 			, 
+	bKOHActive=> 					, 
+	bKOHBlocked=> 					, 
+	bRoomTempDeviationAlarmBlock=> 	, 
+	bAlarmBlocked=> 				, 
+	bAlarmMinTemp=> 				, 
+	diKOHCalcOffset=> 				, 
+	bRampTimeActive=> 				);
+
+
+
+
+	]]></ST>
+    </Implementation>
+    <LineIds Name="MAIN">
+      <LineId Id="212" Count="0" />
+      <LineId Id="263" Count="0" />
+      <LineId Id="213" Count="0" />
+      <LineId Id="55" Count="15" />
+      <LineId Id="2" Count="0" />
+      <LineId Id="181" Count="0" />
+      <LineId Id="184" Count="7" />
+      <LineId Id="182" Count="0" />
+      <LineId Id="267" Count="0" />
+      <LineId Id="265" Count="0" />
+      <LineId Id="257" Count="0" />
+      <LineId Id="314" Count="0" />
+      <LineId Id="375" Count="20" />
+      <LineId Id="315" Count="0" />
+      <LineId Id="203" Count="0" />
+      <LineId Id="106" Count="0" />
+      <LineId Id="258" Count="3" />
+      <LineId Id="490" Count="29" />
+      <LineId Id="262" Count="0" />
+      <LineId Id="486" Count="3" />
+      <LineId Id="485" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="fc_DST" Id="{cb748634-1ab7-476c-bdc5-192b06ddaa73}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION fc_DST : bool
+VAR_INPUT
+	UTC 	: DT;
+END_VAR
+VAR
+	yr 		: INT;
+	yr4 	: DWORD;
+	ltc		: DWORD;
+	idate 	: DWORD;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[yr := fc_Year_Of_Date(DT_TO_DATE(UTC));
+ltc := DT_TO_DWORD(UTC);
+idate := DT_TO_DWORD(fc_Set_DT(yr, 3, 31, 1, 0, 0));
+yr4 := SHR(5 * INT_TO_DWORD(yr), 2) + 1;
+fc_DST := (idate - ((yr4 + 3) MOD 7) * 86400 <= ltc) AND (idate + (214 - (yr4) MOD 7) * 86400 > ltc);
+]]></ST>
+    </Implementation>
+    <LineIds Name="fc_DST">
+      <LineId Id="3" Count="4" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

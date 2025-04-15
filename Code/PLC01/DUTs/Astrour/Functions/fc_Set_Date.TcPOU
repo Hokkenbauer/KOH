@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="fc_Set_Date" Id="{da10a111-412c-4546-a992-ca4c7f425f9a}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION fc_Set_Date : date
+VAR_INPUT
+	YEAR 	: INT;
+	MONTH 	: INT;
+	DAY 	: INT;
+END_VAR
+VAR
+	count 	: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF month > 2 THEN
+	count := (month - 1) * 30;
+	IF month > 7 THEN count := count + SHR(month - 3,1); ELSE count := count + SHR(month - 4,1); END_IF;
+	(* chech for leap year and add one day if true *)
+	IF SHL(year,14) = 0 THEN count := count + 1; END_IF;
+ELSE
+	count := (month - 1) * 31;
+END_IF;
+
+fc_Set_Date := DWORD_TO_DATE((INT_TO_DWORD(count + day - 1) + SHR(INT_TO_DWORD(year) * 1461 - 2878169, 2)) * 86400);
+]]></ST>
+    </Implementation>
+    <LineIds Name="fc_Set_Date">
+      <LineId Id="3" Count="9" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

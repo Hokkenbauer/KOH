@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="fc_Set_DT" Id="{e2b77e93-efdf-4572-9bc0-5191c4c05af5}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION fc_Set_DT : DT
+VAR_INPUT
+	year 	: INT;
+	month 	: INT;
+	day 	: INT;
+	hour 	: INT;
+	minute 	: INT;
+	second 	: INT;
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fc_Set_DT := DWORD_TO_DT(DATE_TO_DWORD(fc_Set_Date(YEAR, MONTH, day)) + INT_TO_DWORD(SECOND) + INT_TO_DWORD(MINUTE) * 60 + INT_TO_DWORD(HOUR) * 3600);]]></ST>
+    </Implementation>
+    <LineIds Name="fc_Set_DT">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,103 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_Ramp" Id="{f16c8c8f-68fd-4315-bb3a-68362d276984}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Ramp 
+VAR_INPUT
+	diInPutValue 		: DINT; // Inputvärde att rampa, skala 0.1
+	diRampUpTime		: DINT; // Upprampning. Tidsenhet i sekunder, skala 0.1
+	diRampDownTime		: DINT; // Upprampning. Tidsenhet i sekunder, skala 0.1
+END_VAR         		
+                		
+VAR_OUTPUT      		
+	diOutPutValue		: DINT; // Outputvärde som är rampat, samma skala som output
+	bActive				: BOOL; // Rampning aktiv
+	bUpDown				: BOOL; // TRUE = Värdet ökar, FALSE = Värde minskar
+END_VAR         		
+                		
+VAR             		
+	bVarInitiation		: BOOL; // Lokal variabel
+	bVarRampAct			: BOOL; // Lokal variabel
+	rVarInPut			: REAL; // Lokal variabel
+	rVarRampUpTime		: REAL; // Lokal variabel
+	rVarRampDownTime	: REAL; // Lokal variabel	
+	rVarOutPut			: REAL; // Lokal variabel
+	tVarSystemTime		: TIME; // Lokal variabel
+	tVarLastTime		: TIME; // Lokal variabel
+END_VAR
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[tVarSystemTime:= TIME();
+
+IF diRampDownTime = 0 AND diRampUpTime = 0 THEN
+	bVarRampAct   := FALSE;
+	diOutPutValue := diInPutValue; ELSE
+	bVarRampAct   := TRUE;
+END_IF
+
+rVarInPut 			:= TO_REAL (diInPutValue);
+rVarRampUpTime 		:= TO_REAL (diRampDownTime);
+rVarRampDownTime 	:= TO_REAL (diRampUpTime);
+
+// Läser ur systemtiden i millisekunder
+tVarSystemTime := tVarSystemTime - tVarLastTime;
+
+IF NOT bVarInitiation THEN
+	bVarInitiation 		:= TRUE;
+	tVarLastTime 		:= tVarSystemTime;
+	tVarSystemTime 		:= T#0S;
+	rVarOutPut 			:= rVarInPut;
+END_IF;
+
+IF NOT bVarRampAct THEN
+	rVarOutPut 			:= rVarInPut;
+	bActive 			:= FALSE;
+
+// Nedrampning	
+ELSIF rVarOutPut > rVarInPut THEN
+	rVarOutPut := rVarOutPut - TIME_TO_REAL(tVarSystemTime) * 0.001 * rVarRampUpTime;
+	rVarOutPut := MAX(rVarInPut, rVarOutPut);
+
+// Upprampning	
+ELSIF rVarOutPut < rVarInPut THEN
+	rVarOutPut := rVarOutPut + TIME_TO_REAL(tVarSystemTime) * 0.001 * rVarRampDownTime;
+	rVarOutPut := MIN(rVarInPut, rVarOutPut);
+END_IF;
+
+diOutPutValue := TO_DINT (rVarOutPut);
+
+// Sätter bActive och bUpDown
+IF rVarOutPut < rVarInPut THEN
+	bActive := TRUE;
+	bUpDown := TRUE;
+ELSIF rVarOutPut > rVarInPut THEN
+	bActive := TRUE;
+	bUpDown := FALSE;
+ELSE
+	bActive := FALSE;
+END_IF;
+tVarLastTime := tVarLastTime + tVarSystemTime;
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_Ramp">
+      <LineId Id="112" Count="1" />
+      <LineId Id="11" Count="2" />
+      <LineId Id="15" Count="15" />
+      <LineId Id="106" Count="0" />
+      <LineId Id="31" Count="2" />
+      <LineId Id="111" Count="0" />
+      <LineId Id="108" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="36" Count="1" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="109" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="40" Count="16" />
+      <LineId Id="97" Count="0" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

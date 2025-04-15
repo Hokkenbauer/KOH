@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <GVL Name="SYSTEM" Id="{d5278dc0-0cfd-49be-a490-2f0f6e630b6d}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL
+	nAliveCounter					: SINT; 			// PLC alive counter
+    sDateAndTime					: STRING;			// Time and date
+	dtSystemTime					: DATE_AND_TIME;	// Date and time
+    uiYear							: UINT;				// Systemtime Year
+    uiMonth							: UINT;				// Systemtime Month
+    uiDayOfWeek 					: UINT;				// Systemtime Day of week
+    uiDay							: UINT;				// Systemtime Day
+    uiHour							: UINT;				// Systemtime Hour
+    uiMinute						: UINT;				// Systemtime Minute
+    uiSecond						: UINT;				// Systemtime Second
+    uiMillisecond					: UINT;				// Systemtime Millisecond
+    uiHourMinute					: UINT;				// Systemtime HourAndMinute
+    dtDate							: DATE_AND_TIME;	// Variable for date and time
+    uiTasktime						: UDINT;			// Tasktime
+    uisystemtime 					: UDINT;			// System time	
+    stTimeStruct					: TIMESTRUCT; 		// Timestruct
+    sActTime						: STRING;			// Actual time
+    uiSeconds						: UDINT;			// Variable for time in seconds
+    bPowerFailDetect				: BOOL;				// Powerfail from UPS
+    bIOError						: BOOL;				// IO-Error 
+    bSavePersistentData				: BOOL;				// Saves persistent data manually              		
+	tPlcUptime						: TIME;             // Last time PLC restart        		
+	bWatchdogAlarm					: BOOL;				// Triggered watchdog alarm
+	bWatchdogIsOK					: BOOL;				// Watchdog is ok  	
+	bStartUp1s						: BOOL;				// Startup delay 1s after restart of TwinCAT
+	bStartUp5s						: BOOL;				// Startup delay 5s after restart of TwinCAT
+	bStartUp10s						: BOOL;				// Startup delay 10s after restart of TwinCAT
+	bStartUp15s						: BOOL;				// Startup delay 15s after restart of TwinCAT
+	bStartUp20s						: BOOL;				// Startup delay 20s after restart of TwinCAT
+	bStartUp25s						: BOOL;				// Startup delay 25s after restart of TwinCAT
+	bStartUp30s						: BOOL;				// Startup delay 30s after restart of TwinCAT
+	bStartUp45s						: BOOL;				// Startup delay 45s after restart of TwinCAT
+	bStartUp60s						: BOOL;				// Startup delay 60s after restart of TwinCAT
+	bStartUp120s					: BOOL;				// Startup delay 120s after restart of TwinCAT
+	bBurglarAlarmActive				: BOOL;				// Aktivt inbrottslarm 
+	rOutdoorTemperature				: REAL;				// Outdoor temperature
+	rAverageOutdoorTemperature		: REAL;				// Outdoor average temperature
+	rAverageMinOutdoorTemperature	: REAL;				// Outdoor average min temperature	
+	rAverageMaxOutdoorTemperature	: REAL;				// Outdoor average max temperature	
+	rAverageIndoorTemperature		: REAL;				// Indoor average temperature
+	bSummerCondition				: BOOL;        		// Summer condition active
+	rCalculatedDewpoint				: REAL;				// Dewpoint   		          	
+
+	sSystemID						: STRING;			// Current System ID
+	sHostName						: STRING;			// Current hostname
+	sAMSNetID						: STRING;			// Current AMS net ID
+	sTargetType						: STRING;           
+	sHardwareModel 					: STRING;
+	sHardwareSerialNumber			: STRING;
+	sHardwareVersion 				: STRING;
+	sHardwareDate					: STRING;
+	sHardwareCPU 					: STRING;
+	sImageDevice					: STRING;
+	sImageVersion 					: STRING;
+	sImageLevel 					: STRING;
+	sImageOsName 					: STRING;
+	sImageOsVersion 				: STRING;
+	sTwinCATVersion 				: STRING;
+	sTwinCATRevision 				: STRING;
+	sTwinCATBuild 					: STRING;
+	sTwinCATLevel					: STRING;
+	udiCpuUsage						: UDINT;	
+	iArrWildCards					: ARRAY [0..100] OF INT;
+	bArrWildCards					: ARRAY [0..100] OF BOOL;	
+	
+	
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

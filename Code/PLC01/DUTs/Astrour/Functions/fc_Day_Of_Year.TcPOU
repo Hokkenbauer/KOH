@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="fc_Day_Of_Year" Id="{7aeb60d9-4091-4d87-85e0-65ceeeefc0da}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION fc_Day_Of_Year : int
+VAR_INPUT
+		IDATE : DATE;
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+fc_Day_Of_Year := UDINT_TO_INT((DATE_TO_UDINT(idate) / UDINT#86400) MOD UDINT#1461);
+
+IF fc_Day_Of_Year > 729 THEN
+	IF fc_Day_Of_Year > 1095 THEN fc_Day_Of_Year := fc_Day_Of_Year - 1095; ELSE fc_Day_Of_Year := fc_Day_Of_Year - 729; END_IF;
+ELSIF fc_Day_Of_Year > 364 THEN
+	fc_Day_Of_Year := fc_Day_Of_Year - 364;
+ELSE
+	fc_Day_Of_Year := fc_Day_Of_Year + 1;
+END_IF;]]></ST>
+    </Implementation>
+    <LineIds Name="fc_Day_Of_Year">
+      <LineId Id="3" Count="8" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

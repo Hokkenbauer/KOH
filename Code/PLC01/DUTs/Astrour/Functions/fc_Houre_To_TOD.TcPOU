@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="fc_Houre_To_TOD" Id="{a4f5f9ff-3198-467f-8c50-265ce4840db5}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION fc_Houre_To_TOD : TOD
+VAR_INPUT
+		IN : REAL;
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fc_Houre_To_TOD := DWORD_TO_TOD(REAL_TO_DWORD(IN * 3600000));
+]]></ST>
+    </Implementation>
+    <LineIds Name="fc_Houre_To_TOD">
+      <LineId Id="3" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

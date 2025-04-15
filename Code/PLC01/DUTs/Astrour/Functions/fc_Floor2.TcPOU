@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="fc_Floor2" Id="{318c046d-7fdc-46e5-8817-8747fa4d9099}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION fc_Floor2 : DINT
+VAR_INPUT
+	X : REAL;
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fc_Floor2 := REAL_TO_DINT(X);
+IF DINT_TO_REAL(fc_Floor2) > X THEN
+	fc_Floor2 := fc_Floor2 - 1;
+END_IF;]]></ST>
+    </Implementation>
+    <LineIds Name="fc_Floor2">
+      <LineId Id="3" Count="2" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

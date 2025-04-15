@@ -1,0 +1,429 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_SwedishHolidaysOLD" Id="{f7a14781-63c2-48d2-8063-64f928cbe971}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_SwedishHolidaysOLD
+VAR_INPUT
+    iYear 					: INT; // Aktuellt år
+    dtCurrentDate 			: DATE_AND_TIME; // Dagens datum
+END_VAR
+
+VAR_OUTPUT
+   	bMaundyThursday			: BOOL; // Skärtorsdag
+   	bGoodFriday 			: BOOL; // Långfredag
+   	bEasterSaturday			: BOOL; // Påskafton
+   	bEasterSunday 			: BOOL; // Påskdagen
+   	bEasterMonday 			: BOOL; // Annandag påsk
+	bAscensionDay			: BOOL; // Kristihimmelsfärds dag
+	
+	bJulAfton				: BOOL; // Julafton
+	bJulDagen				: BOOL; // Juldagen
+	bAnnandagJul			: BOOL; // Annandag jul
+	bTrettonDagJul			: BOOL; // Trettondagsjul
+	
+	bNyArsAfton				: BOOL; // Nyårsafton
+	bNyArsDagen				: BOOL; // Nyårsdagen
+	
+	bPingstAfton			: BOOL; // Pingstafton
+	bPingstDagen			: BOOL; // Pingstdagen
+	
+	bMidsommarafton			: BOOL; // Midsommarafton
+	bMidsommarDagen 		: BOOL; // Midsommardagen
+	bHalloween 				: BOOL; // Alla helgons dag, Halloween
+	
+	bForstaMaj				: BOOL; // Första Maj
+	bSverigesNationaldag 	: BOOL; // Sveriges nationaldag
+	
+	bAnyHolidayActive		: BOOL; // Någon helgdag är aktiv
+	
+END_VAR
+
+VAR
+    iA, iB, iC, iD, iE, iMonth, iDay : INT;
+    udiGoodFriday			: UDINT;
+	udiMaundyThursday		: UDINT;
+	udiEasterSaturday		: UDINT;
+	udiEasterMonday			: UDINT;
+	udiAscensionDay			: UDINT;
+	udiPingstAfton			: UDINT;
+	udiPingstDagen			: UDINT;
+	udiMidsommardagen		: UDINT;
+	stPaskdagen 			: TIMESTRUCT;
+	stSystemTime			: TIMESTRUCT;
+	stMidsommarAfton		: TIMESTRUCT;
+	stMidsommarDagen		: TIMESTRUCT;
+	stHalloween				: TIMESTRUCT;
+
+	iForMidsommarday		: INT; // forloop midsommardagen 20-25 (23:59)
+	dtVarMidsommar 			: DATE_AND_TIME; // lokal var
+	stVarMidsommarCalc 		: TIMESTRUCT; // Lokal va
+	
+	iForHalloween			: INT; // forloop halloween 31-06 månadsbrytr
+	stVarHalloweenCalc		: TIMESTRUCT;
+	bVarHalloween			: BOOL; // Lokal var
+	dtVarHalloween			: DATE_AND_TIME; 
+	
+	iVarSummaHelgdag		: INT; // forloop summa helgdag
+	arrHelgDag				: ARRAY [1..19] OF BOOL;
+	
+	stAscensionDay			: TIMESTRUCT;
+	stPingstDagen			: TIMESTRUCT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Beräkning av påskdagen med Gauss' algoritm
+iA := iYear MOD 19;
+iB := iYear MOD 4;
+iC := iYear MOD 7;
+iD := (19 * iA + 24) MOD 30;
+iE := ((2 * iB) + (4 * iC) + (6 * iD) + 5) MOD 7;
+iDay := 22 + iD + iE; // Påskdagen i mars eller april
+stSystemTime:= DT_TO_SYSTEMTIME(dtCurrentDate);
+
+IF iDay > 31 THEN
+    iMonth := 4; ELSE 
+    iMonth := 3; 
+END_IF;
+
+IF iDay <= 31 THEN
+	stPaskdagen.wMonth := 3;
+	stPaskdagen.wDay := INT_TO_WORD(iDay); ELSE
+	stPaskdagen.wMonth := 4;
+	stPaskdagen.wDay := INT_TO_WORD(iDay - 31);
+END_IF
+
+IF stPaskdagen.wMonth = 4 AND stPaskdagen.wDay = 26 THEN
+	stPaskdagen.wDay := 19;
+END_IF
+
+IF stPaskdagen.wMonth = 4 AND stPaskdagen.wDay = 25 AND iD = 28 AND iE = 6 AND iA > 10 THEN
+	stPaskdagen.wDay := 18;
+END_IF
+
+// Beräknar midsommar
+stMidsommarAfton.wYear := stSystemTime.wYear;
+stMidsommarAfton.wMonth := 6;
+FOR iForMidsommarday := 20 TO 26 DO
+	stMidsommarAfton.wDay := INT_TO_WORD(iForMidsommarday);
+	dtVarMidsommar := SYSTEMTIME_TO_DT(stVarMidsommarCalc);
+	stVarMidsommarCalc := DT_TO_SYSTEMTIME(dtVarMidsommar);
+
+IF stVarMidsommarCalc.wDayOfWeek = 5 THEN
+	stMidsommarAfton := stVarMidsommarCalc;
+END_IF
+
+END_FOR
+
+// Beräknar halloween
+stVarHalloweenCalc.wYear := stSystemtime.wYear;
+stVarHalloweenCalc.wMonth := 11;
+bVarHalloween := FALSE;
+FOR iForHalloween := 1 TO 6 DO
+	stVarHalloweenCalc.wDay := INT_TO_WORD(iForHalloween);
+	dtVarHalloween := SYSTEMTIME_TO_DT(stVarHalloweenCalc);
+	stVarHalloweenCalc := DT_TO_SYSTEMTIME(dtVarHalloween);
+	
+	IF stVarHalloweenCalc.wDayOfWeek = 6 THEN
+		stHalloween := stVarHalloweenCalc;
+		bVarHalloween := TRUE;
+		EXIT;
+		ELSIF stVarHalloweenCalc.wDay = 6 AND NOT bVarHalloween THEN
+			stHalloween.wMonth := 10;
+			stHalloween.wDay := 31;			
+	END_IF
+END_FOR
+
+// Beräknar kristi himmelsfärd
+IF stPaskdagen.wDay > 22 THEN
+	stAscensionDay.wMonth := stPaskdagen.wMonth + 2;
+	stAscensionDay.wDay := stPaskdagen.wDay - 22;
+	ELSIF stPaskdagen.wMonth = 3 THEN
+		stAscensionDay.wDay := stPaskdagen.wDay + 8;
+	ELSE stAscensionDay.wDay := stPaskdagen.wDay + 9;
+END_IF
+
+
+// Beräknar pingstdagen
+IF stAscensionDay.wMonth = 4 THEN
+	stPingstDagen.wMonth := 5;
+	stPingstDagen.wDay := 10;
+END_IF
+
+IF stAscensionDay.wMonth = 5 AND stAscensionDay.wMonth > 20 THEN
+	stPingstDagen.wMonth := 6;
+	stPingstDagen.wDay := stAscensionDay.wDay - 20;
+	ELSIF stAscensionDay.wMonth = 5 AND stAscensionDay.wMonth <= 20 THEN
+			stPingstDagen.wMonth := 5;
+			stPingstDagen.wDay := stAscensionDay.wDay + 10;
+				ELSE stPingstDagen.wMonth := 6;
+				stPingstDagen.wDay := stAscensionDay.wDay + 10;
+END_IF
+
+// Beräkna de andra helgdagarna
+udiGoodFriday 		:= stPaskdagen.wDay - 2;
+udiMaundyThursday 	:= stPaskdagen.wDay - 3;
+udiEasterSaturday 	:= stPaskdagen.wDay - 1;
+udiEasterMonday 	:= stPaskdagen.wDay + 1;
+udiAscensionDay 	:= stPaskdagen.wDay + 39;
+udiPingstAfton		:= stPaskdagen.wDay + 48;
+udiPingstDagen		:= stPaskdagen.wDay + 49;
+udiMidsommarDagen	:= stMidsommarAfton.wDay + 1;
+
+// Sätter utgångar
+
+// Skärtorsdag
+IF stSystemTime.wMonth = stPaskdagen.wMonth AND stSystemTime.wDay = udiMaundyThursday THEN
+	bMaundyThursday := TRUE; ELSE
+	bMaundyThursday := FALSE;
+END_IF
+
+// Långfredag
+IF stSystemTime.wMonth = stPaskdagen.wMonth AND stSystemTime.wDay = udiGoodFriday THEN
+	bGoodFriday := TRUE; ELSE
+	bGoodFriday := FALSE;
+END_IF
+
+// Påskafton
+IF stSystemTime.wMonth = stPaskdagen.wMonth AND stSystemTime.wDay = udiEasterSaturday THEN
+	bEasterSaturday := TRUE; ELSE
+	bEasterSaturday := FALSE;
+END_IF
+
+// Påskdagen
+IF stSystemTime.wMonth = stPaskdagen.wMonth AND stSystemTime.wDay = stPaskdagen.wDay THEN
+	bEasterSunday := TRUE; ELSE
+	bEasterSunday := FALSE;
+END_IF
+
+// Annandag påsk
+IF stSystemTime.wMonth = stPaskdagen.wMonth AND stSystemTime.wDay = udiEasterMonday THEN
+	bEasterMonday := TRUE; ELSE
+	bEasterMonday := FALSE;
+END_IF
+
+// Kristi himmelsfärd
+IF stSystemTime.wMonth = stPaskdagen.wMonth +1  AND stSystemTime.wDay  = stPaskdagen.wDay +9 THEN
+	bAscensionDay := TRUE; ELSE
+	bAscensionDay := FALSE;
+END_IF
+
+// Julafton
+IF stSystemTime.wMonth = 12 AND stSystemTime.wDay = 24 THEN
+	bJulAfton:= TRUE; ELSE
+	bJulAfton:= FALSE;
+END_IF
+
+// Juldagen
+IF stSystemTime.wMonth = 12 AND stSystemTime.wDay = 25 THEN
+	bJulDagen:= TRUE; ELSE
+	bJulDagen:= FALSE;
+END_IF
+
+// Annandag jul
+IF stSystemTime.wMonth = 12 AND stSystemTime.wDay = 26 THEN
+	bAnnandagJul:= TRUE; ELSE
+	bAnnandagJul:= FALSE;
+END_IF
+
+// Trettondag jul
+IF stSystemTime.wMonth = 1 AND stSystemTime.wDay = 6 THEN
+	bTrettonDagJul:= TRUE; ELSE
+	bTrettonDagJul:= FALSE;
+END_IF
+
+// Nyårsafton
+IF stSystemTime.wMonth = 12 AND stSystemTime.wDay = 31 THEN
+	bNyArsAfton:= TRUE; ELSE
+	bNyArsAfton:= FALSE;
+END_IF
+
+// Nyårsdagen
+IF stSystemTime.wMonth = 1 AND stSystemTime.wDay = 1 THEN
+	bNyArsDagen:= TRUE; ELSE
+	bNyArsDagen:= FALSE;
+END_IF
+
+// Pingstafton
+IF stSystemTime.wMonth = stPingstDagen.wMonth AND stSystemTime.wDay = stPingstDagen.wDay -1 THEN
+	bPingstAfton := TRUE; ELSE
+	bPingstAfton := FALSE;
+END_IF
+
+// Pingstdagen
+IF stSystemTime.wMonth = stPaskdagen.wMonth +1 AND stSystemTime.wDay = stPingstDagen.wDay THEN
+	bPingstAfton := TRUE; ELSE
+	bPingstAfton := FALSE;
+END_IF
+
+// Midsommarafton
+IF stSystemTime.wMonth = stMidsommarAfton.wMonth AND stSystemTime.wDay = stMidsommarAfton.wDay THEN
+	bMidsommarafton:= TRUE; ELSE
+	bMidsommarafton:= FALSE;
+END_IF
+
+// Midsommardagen
+IF stSystemTime.wMonth = stMidsommarDagen.wMonth AND stSystemTime.wDay = stMidsommarDagen.wDay THEN
+	bMidsommarDagen:= TRUE; ELSE
+	bMidsommarDagen:= FALSE;
+END_IF
+
+// Halloween
+IF stSystemTime.wMonth = stHalloween.wMonth AND stSystemTime.wDay = stHalloween.wDay THEN
+	bHalloween:= TRUE; ELSE
+	bHalloween:= FALSE;
+END_IF
+
+// Första maj
+IF stSystemTime.wMonth = 5 AND stSystemTime.wDay = 1 THEN
+	bForstaMaj:= TRUE; ELSE
+	bForstaMaj:= FALSE;
+END_IF
+
+// Sveriges nationaldag
+IF stSystemTime.wMonth = 6 AND stSystemTime.wDay = 6 THEN
+	bSverigesNationaldag:= TRUE; ELSE
+	bSverigesNationaldag:= FALSE;
+END_IF
+
+
+arrHelgDag[1]:= bMaundyThursday;
+arrHelgDag[2]:= bGoodFriday;
+arrHelgDag[3]:= bEasterSaturday;
+arrHelgDag[4]:= bEasterSunday;
+arrHelgDag[5]:= bEasterMonday;
+arrHelgDag[6]:= bAscensionDay;
+arrHelgDag[7]:= bJulAfton;
+arrHelgDag[8]:= bJulDagen;
+arrHelgDag[9]:= bAnnandagJul;
+arrHelgDag[10]:= bTrettonDagJul;
+arrHelgDag[11]:= bNyArsAfton;
+arrHelgDag[12]:= bNyArsDagen;
+arrHelgDag[13]:= bPingstAfton;
+arrHelgDag[14]:= bPingstDagen;
+arrHelgDag[15]:= bMidsommarafton;
+arrHelgDag[16]:= bMidsommarDagen;
+arrHelgDag[17]:= bHalloween;
+arrHelgDag[18]:= bForstaMaj;
+arrHelgDag[19]:= bSverigesNationaldag;
+
+iVarSummaHelgdag := 1;
+FOR iVarSummaHelgdag := 1 TO 19 DO
+	IF arrHelgDag[iVarSummaHelgdag] THEN
+	bAnyHolidayActive:= TRUE;
+	EXIT;
+	ELSE bAnyHolidayActive:= FALSE;
+		
+	END_IF
+END_FOR
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_SwedishHolidaysOLD">
+      <LineId Id="61" Count="0" />
+      <LineId Id="474" Count="6" />
+      <LineId Id="554" Count="0" />
+      <LineId Id="481" Count="1" />
+      <LineId Id="485" Count="2" />
+      <LineId Id="531" Count="2" />
+      <LineId Id="560" Count="0" />
+      <LineId Id="535" Count="9" />
+      <LineId Id="652" Count="0" />
+      <LineId Id="769" Count="12" />
+      <LineId Id="788" Count="1" />
+      <LineId Id="793" Count="15" />
+      <LineId Id="792" Count="0" />
+      <LineId Id="941" Count="0" />
+      <LineId Id="790" Count="0" />
+      <LineId Id="935" Count="5" />
+      <LineId Id="923" Count="2" />
+      <LineId Id="922" Count="0" />
+      <LineId Id="908" Count="12" />
+      <LineId Id="875" Count="0" />
+      <LineId Id="783" Count="0" />
+      <LineId Id="523" Count="3" />
+      <LineId Id="495" Count="0" />
+      <LineId Id="631" Count="0" />
+      <LineId Id="653" Count="0" />
+      <LineId Id="722" Count="0" />
+      <LineId Id="784" Count="0" />
+      <LineId Id="555" Count="0" />
+      <LineId Id="632" Count="0" />
+      <LineId Id="785" Count="0" />
+      <LineId Id="660" Count="0" />
+      <LineId Id="633" Count="2" />
+      <LineId Id="202" Count="0" />
+      <LineId Id="661" Count="0" />
+      <LineId Id="637" Count="3" />
+      <LineId Id="636" Count="0" />
+      <LineId Id="662" Count="0" />
+      <LineId Id="642" Count="3" />
+      <LineId Id="641" Count="0" />
+      <LineId Id="663" Count="0" />
+      <LineId Id="646" Count="0" />
+      <LineId Id="562" Count="1" />
+      <LineId Id="582" Count="0" />
+      <LineId Id="561" Count="0" />
+      <LineId Id="664" Count="0" />
+      <LineId Id="591" Count="3" />
+      <LineId Id="570" Count="0" />
+      <LineId Id="665" Count="0" />
+      <LineId Id="647" Count="3" />
+      <LineId Id="575" Count="0" />
+      <LineId Id="666" Count="0" />
+      <LineId Id="655" Count="0" />
+      <LineId Id="654" Count="0" />
+      <LineId Id="656" Count="0" />
+      <LineId Id="658" Count="0" />
+      <LineId Id="657" Count="0" />
+      <LineId Id="667" Count="4" />
+      <LineId Id="576" Count="0" />
+      <LineId Id="672" Count="4" />
+      <LineId Id="577" Count="0" />
+      <LineId Id="678" Count="4" />
+      <LineId Id="677" Count="0" />
+      <LineId Id="709" Count="4" />
+      <LineId Id="684" Count="0" />
+      <LineId Id="715" Count="4" />
+      <LineId Id="685" Count="0" />
+      <LineId Id="723" Count="0" />
+      <LineId Id="729" Count="3" />
+      <LineId Id="686" Count="0" />
+      <LineId Id="733" Count="4" />
+      <LineId Id="687" Count="0" />
+      <LineId Id="739" Count="0" />
+      <LineId Id="786" Count="0" />
+      <LineId Id="693" Count="0" />
+      <LineId Id="759" Count="0" />
+      <LineId Id="761" Count="0" />
+      <LineId Id="760" Count="0" />
+      <LineId Id="787" Count="0" />
+      <LineId Id="764" Count="3" />
+      <LineId Id="694" Count="2" />
+      <LineId Id="820" Count="1" />
+      <LineId Id="823" Count="0" />
+      <LineId Id="822" Count="0" />
+      <LineId Id="829" Count="0" />
+      <LineId Id="825" Count="3" />
+      <LineId Id="697" Count="0" />
+      <LineId Id="830" Count="4" />
+      <LineId Id="698" Count="1" />
+      <LineId Id="850" Count="10" />
+      <LineId Id="862" Count="7" />
+      <LineId Id="873" Count="0" />
+      <LineId Id="700" Count="0" />
+      <LineId Id="704" Count="0" />
+      <LineId Id="840" Count="0" />
+      <LineId Id="843" Count="0" />
+      <LineId Id="841" Count="0" />
+      <LineId Id="845" Count="1" />
+      <LineId Id="848" Count="1" />
+      <LineId Id="842" Count="0" />
+      <LineId Id="705" Count="3" />
+      <LineId Id="683" Count="0" />
+      <LineId Id="201" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

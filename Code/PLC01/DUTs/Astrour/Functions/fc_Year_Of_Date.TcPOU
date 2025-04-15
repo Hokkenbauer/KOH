@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="fc_Year_Of_Date" Id="{e6ce8169-2218-4c59-b394-d4f682f27f31}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION fc_Year_Of_Date : INT
+VAR_INPUT
+		IDATE : DATE;
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fc_Year_Of_Date := DWORD_TO_INT((DATE_TO_DWORD(idate) + 43200) / 31557600 + 1970);]]></ST>
+    </Implementation>
+    <LineIds Name="fc_Year_Of_Date">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

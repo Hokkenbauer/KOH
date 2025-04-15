@@ -1,0 +1,174 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_TidKanalDrift" Id="{8185a9f5-d251-41d2-aaa7-fe0bdaf74f49}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_TidKanalDrift
+VAR_INPUT
+	bEn				: BOOL;		// Aktivera block
+	wMondayOn		: WORD;		// Starttid Måndag
+	wMondayOff		: WORD;		// Stopptid Måndag
+	wTuesdayOn		: WORD;		// Starttid Tisdag
+	wTuesdayOff		: WORD;		// Stopptid Tisdag
+	wWednesdayOn	: WORD;		// Starttid Onsdag
+	wWednesdayOff	: WORD;		// Stopptid Onsdag
+	wThursdayOn		: WORD;		// Starttid Torsdag
+	wThursdayOff	: WORD;		// Stopptid Torsdag
+	wFridayOn		: WORD;		// Starttid Fredag
+	wFridayOff		: WORD;		// Stopptid Fredag
+	wSaturdayOn		: WORD;		// Starttid Lördag
+	wSaturdayOff	: WORD;		// Stopptid Lördag
+	wSundayOn		: WORD;		// Starttid Söndag
+	wSundayOff		: WORD;		// Stopptid Söndag
+END_VAR
+	
+VAR_OUTPUT
+	bOn				: BOOL;		// Tidkanal aktiv
+END_VAR
+
+
+VAR
+	fbSystemTime 	: FB_SystemTime;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Tidkanal
+fbSystemTime();
+IF bEN THEN
+
+CASE fbSystemTime.nWeekDay OF
+	
+		1: // Måndag 
+		IF wMondayOff < wMondayOn THEN
+			// 22:00-03:00
+			IF fbSystemTime.nHourMinute >= wMondayOn OR fbSystemTime.nHourMinute < wMondayOff THEN
+				bOn := TRUE;
+			ELSE
+				bOn := FALSE;
+			END_IF
+		ELSE
+			// 06:00-22:00	
+			IF fbSystemTime.nHourMinute >= wMondayOn AND fbSystemTime.nHourMinute < wMondayOff THEN
+				bOn := TRUE;
+			ELSE
+				bOn := FALSE;
+			END_IF
+		END_IF	
+		
+		2: // Tisdag
+		IF wTuesdayOff < wTuesdayOn THEN
+			// 22:00-03:00
+			IF fbSystemTime.nHourMinute >= wTuesdayOn OR fbSystemTime.nHourMinute < wTuesdayOff THEN
+				bOn := TRUE;
+			ELSE
+				bOn := FALSE;
+			END_IF
+		ELSE
+			// 06:00-22:00	
+			IF fbSystemTime.nHourMinute >= wTuesdayOn AND fbSystemTime.nHourMinute < wTuesdayOff THEN
+				bOn := TRUE;
+			ELSE
+				bOn := FALSE;
+			END_IF
+		END_IF		
+		
+		3: // Onsdag
+		IF wWednesdayOff < wWednesdayOn THEN
+			// 22:00-03:00
+			IF fbSystemTime.nHourMinute >= wWednesdayOn OR fbSystemTime.nHourMinute < wWednesdayOff THEN
+				bOn := TRUE;
+			ELSE
+				bOn := FALSE;
+			END_IF
+		ELSE
+			// 06:00-22:00	
+			IF fbSystemTime.nHourMinute >= wWednesdayOn AND fbSystemTime.nHourMinute < wWednesdayOff THEN
+				bOn := TRUE;
+			ELSE
+				bOn := FALSE;
+			END_IF
+		END_IF	
+		
+		4: // Torsdag
+		IF wThursdayOff < wThursdayOn THEN
+			// 22:00-03:00
+			IF fbSystemTime.nHourMinute >= wThursdayOn OR fbSystemTime.nHourMinute < wThursdayOff THEN
+				bOn := TRUE;
+			ELSE
+				bOn := FALSE;
+			END_IF
+		ELSE
+			// 06:00-22:00	
+			IF fbSystemTime.nHourMinute >= wThursdayOn AND fbSystemTime.nHourMinute < wThursdayOff THEN
+				bOn := TRUE;
+			ELSE
+				bOn := FALSE;
+			END_IF
+		END_IF	
+
+		5: // Fredag 
+		IF wFridayOff < wFridayOn THEN
+			// 22:00-03:00
+			IF fbSystemTime.nHourMinute >= wFridayOn OR fbSystemTime.nHourMinute < wFridayOff THEN
+				bOn := TRUE;
+			ELSE
+				bOn := FALSE;
+			END_IF
+		ELSE
+			// 06:00-22:00	
+			IF fbSystemTime.nHourMinute >= wFridayOn AND fbSystemTime.nHourMinute < wFridayOff THEN
+				bOn := TRUE;
+			ELSE
+				bOn := FALSE;
+			END_IF
+		END_IF	
+		
+		6: // Lördag
+		IF wSaturdayOff < wSaturdayOn THEN
+			// 22:00-03:00
+			IF fbSystemTime.nHourMinute >= wSaturdayOn OR fbSystemTime.nHourMinute < wSaturdayOff THEN
+				bOn := TRUE;
+			ELSE
+				bOn := FALSE;
+			END_IF
+		ELSE
+			// 06:00-22:00	
+			IF fbSystemTime.nHourMinute >= wSaturdayOn AND fbSystemTime.nHourMinute < wSaturdayOff THEN
+				bOn := TRUE;
+			ELSE
+				bOn := FALSE;
+			END_IF
+		END_IF	
+		
+		0: // Söndag
+		IF wSundayOff < wSundayOn THEN
+			// 22:00-03:00
+			IF fbSystemTime.nHourMinute >= wSundayOn OR fbSystemTime.nHourMinute < wSundayOff THEN
+				bOn := TRUE;
+			ELSE
+				bOn := FALSE;
+			END_IF
+		ELSE
+			// 06:00-22:00	
+			IF fbSystemTime.nHourMinute >= wSundayOn AND fbSystemTime.nHourMinute < wSundayOff THEN
+				bOn := TRUE;
+			ELSE
+				bOn := FALSE;
+			END_IF
+		END_IF
+END_CASE
+
+
+ELSE bOn := FALSE;
+	
+END_IF
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_TidKanalDrift">
+      <LineId Id="308" Count="1" />
+      <LineId Id="469" Count="1" />
+      <LineId Id="312" Count="125" />
+      <LineId Id="440" Count="0" />
+      <LineId Id="159" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

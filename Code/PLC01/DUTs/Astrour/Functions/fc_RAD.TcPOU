@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="fc_RAD" Id="{cf0b0e06-347b-49c3-9074-948dee27f84b}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION fc_RAD : real
+VAR_INPUT
+	DEG : REAL;
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fc_RAD := fc_MODR(0.0174532925199433 * DEG, 6.28318530717958647692528676655900576);
+]]></ST>
+    </Implementation>
+    <LineIds Name="fc_RAD">
+      <LineId Id="3" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

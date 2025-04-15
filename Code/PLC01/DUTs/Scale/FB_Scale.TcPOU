@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_Scale" Id="{95e40287-3797-4ad8-81a3-e0341602b233}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Scale
+VAR_INPUT	
+	diInPutToScale			:DINT; // Värde som ska skalas
+	diX0StarterValScaled	:DINT; // Startvärde, tex 0
+	diX1EndValScaled		:DINT; // Slutvärde, tex 1000
+	diY0StartOut			:DINT; // Startvärde skalat
+	iY1EndOut				:DINT; // Slutvärde skalat
+END_VAR
+VAR_OUTPUT
+	diOutPutVal				:DINT; // Utvärde
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF diX1EndValScaled > 0 AND diX1EndValScaled > diX0StarterValScaled  THEN 
+	diOutPutVal := (diInPutToScale - diX0StarterValScaled) * (iY1EndOut - diY0StartOut) / (diX1EndValScaled - diX0StarterValScaled) + iY1EndOut;
+	ELSE diOutPutVal := 0;
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="FB_Scale">
+      <LineId Id="11" Count="2" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

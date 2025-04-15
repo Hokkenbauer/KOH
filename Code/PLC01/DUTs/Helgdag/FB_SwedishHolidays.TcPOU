@@ -1,0 +1,265 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_SwedishHolidays" Id="{55bfe449-8307-4793-bf14-a58d9215fa8e}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_SwedishHolidays
+VAR_INPUT
+END_VAR
+
+VAR_OUTPUT
+	dtActualDateAndTime			: DATE_AND_TIME;
+	bLangfredag					: BOOL;
+	bSkartorsdag				: BOOL;
+	bPaskDagen					: BOOL;
+    bPaskafton					: BOOL;
+    bAnnanDagPask				: BOOL;
+    bKristihimmel				: BOOL;
+    bPingstAfton				: BOOL;
+    bPingstDagen				: BOOL;
+    bMidsommarDagen				: BOOL;
+    bMidsommarAfton				: BOOL;
+    bHalloween					: BOOL;
+    bJulafton					: BOOL;
+    bJuldagen					: BOOL;
+    bAnnandagjul				: BOOL;
+    bTrettondag					: BOOL;
+    bNyarsafton					: BOOL;
+    bNyarsdagen					: BOOL;
+    bForstamaj					: BOOL;
+    bNationaldag				: BOOL;
+	bHelgDagAktiv				: BOOL;
+END_VAR
+
+VAR
+	fbSystemTime 				: FB_SystemTime;
+    iYear 						: INT; // Aktuellt år	
+    iMonth						: INT;
+	iDay						: INT;
+    iEastermDayOfYear			: INT; // Påskdagens dagnummer i året
+    isLeapYear 					: BOOL; // Flagga för skottår	
+	stSystemTime				: TIMESTRUCT;
+    arrMonthDays 				: ARRAY[1..12] OF INT := [31,28,31,30,31,30,31,31,30,31,30,31]; // Dagar per månad
+    iDayOfYear					: INT;
+    a, b, c, d, e, f, g, h, i, k, L, m, n : INT; // Variabler för Gauss algoritm
+	iDayOfWeek					: INT;
+	iActMonth					: INT;
+	
+	iVarHalloweenDay			: INT;
+	iVarMidsommardagen 			: INT;
+	iMidsommardagenDayOfYear	: INT;
+	iVarMidsommardagenDayOfWeek	: INT;
+	iVarMidsommardagen1			: INT;
+	iSumDays					: INT;
+	iVarDayOfYearCristmas		: INT;
+	iVarDayForstamaj			: INT;
+	iVarNationaldag				: INT;
+	iVarJuldagen				: INT;
+	
+	iLangfredag					: INT;
+ 	iSkartorsdag				: INT;
+	iPaskDagen					: INT;
+ 	iPaskafton					: INT;
+ 	iAnnanDagPask				: INT;
+	iKristihimmel				: INT;
+	iPingstAfton				: INT;
+	iPingstDagen				: INT;
+	iMidsommarDagen				: INT;
+	iMidsommarAfton				: INT;
+	iHalloween					: INT;
+	iJulafton					: INT;
+	iJuldagen					: INT;
+	iAnnandagjul				: INT;
+	iTrettondag					: INT;
+    iNyarsafton					: INT;	
+    iNyarsdagen					: INT;	
+    iForstamaj					: INT;		
+    iNationaldag				: INT;
+END_VAR
+
+VAR PERSISTENT
+	iYear2000		: INT:=2000;
+END_VAR
+
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fbSystemTime();
+iDayOfYear:= fc_Day_Of_Year(IDATE:=TO_DATE (fbSystemTime.dtSystemTime)) + 1;
+iYear:= DWORD_TO_INT(fbSystemTime.nYear);
+iDayOfWeek:= DWORD_TO_INT(fbSystemTime.nDay);
+iActMonth:= TO_INT (fbSystemTime.nMonth);
+dtActualDateAndTime:= (fbSystemTime.dtSystemTime);
+
+// Gauss algoritm för att räkna ut påskdagen
+a := iYear MOD 19;
+b := iYear / 100;
+c := iYear MOD 100;
+d := b / 4;
+e := b MOD 4;
+f := (b + 8) / 25;
+g := (b - f + 1) / 3;
+h := (19 * a + b - d - g + 15) MOD 30;
+i := c / 4;
+k := c MOD 4;
+L := (32 + 2 * e + 2 * i - h - k) MOD 7;
+m := (a + 11 * h + 22 * L) / 451;
+n := (h + L - 7 * m + 114);
+iMonth := n / 31;
+iDay := (n MOD 31) + 1;
+
+// Kontrollera om året är skottår
+IF (iYear MOD 4 = 0 AND iYear MOD 100 <> 0) OR (iYear MOD 400 = 0) THEN
+    isLeapYear := TRUE;
+    arrMonthDays[2] := 29; // Februari har 29 dagar i skottår
+ELSE
+    isLeapYear := FALSE;
+END_IF
+
+// Beräkna årets dag för påskdagen
+iEastermDayOfYear := iDay; // Startvärde
+FOR i := 1 TO iMonth - 1 DO
+    iEastermDayOfYear := iEastermDayOfYear + arrMonthDays[i]; // Addera dagar i tidigare månader
+END_FOR
+
+// Beräkna årets dag för 31 oktober, Halloween
+iVarHalloweenDay := 31; // Startvärde för Halloweens dag i oktober
+FOR i := 1 TO 9 DO // Loopar igenom månaderna januari-september
+    iVarHalloweenDay := iVarHalloweenDay + arrMonthDays[i]; // Addera dagar i tidigare månader
+END_FOR
+
+
+// 1. Beräkna veckodag för 20 juni enligt Zeller's Congruence
+iVarMidsommardagenDayOfWeek := (20 + ((13 * 7) / 5) + (iYear MOD 100) + ((iYear MOD 100) / 4) + ((iYear / 100) / 4) - (2 * (iYear / 100))) MOD 7;
+
+// 2. Konvertera från Zeller-format till Beckhoff-format (Söndag = 0, Måndag = 1, ..., Lördag = 6)
+iVarMidsommardagenDayOfWeek := (iVarMidsommardagenDayOfWeek + 6) MOD 7;
+
+// 3. Hitta första lördagen från och med 20 juni
+IF iVarMidsommardagenDayOfWeek = 6 THEN
+    iVarMidsommardagen := 20; // 20 juni är lördag
+ELSE
+    iVarMidsommardagen := 20 + ((6 - iVarMidsommardagenDayOfWeek) MOD 7);
+END_IF
+
+// 4. Beräkna årets dag (julianska kalenderdagar) inklusive skottår
+iVarMidsommardagen1 := iVarMidsommardagen;
+
+// Lägg till dagarna från januari till maj
+iSumDays := 0;
+FOR i := 1 TO 5 DO
+    iSumDays := iSumDays + arrMonthDays[i];
+END_FOR
+
+// Om det är skottår, lägg till 1 dag efter februari
+IF ((iYear MOD 4 = 0 AND iYear MOD 100 <> 0) OR (iYear MOD 400 = 0)) THEN
+    iSumDays := iSumDays + 1;  // Flytta till här!
+END_IF
+
+iVarMidsommardagen1 := iVarMidsommardagen1 + iSumDays;
+
+
+// Beräknar årets dag för 25 december
+iVarDayOfYearCristmas := 24; // Startvärde för juldagen
+FOR i := 1 TO 11 DO // Loopar igenom månaderna januari-november
+    iVarDayOfYearCristmas := iVarDayOfYearCristmas + arrMonthDays[i]; // Addera dagar i tidigare månader
+END_FOR
+
+IF isLeapYear THEN
+    iVarDayOfYearCristmas := iVarDayOfYearCristmas + 1;
+END_IF
+
+// Beräknar årets dag för 1 maj
+iVarDayForstamaj := 0; // Startvärde för 1 maj
+FOR i := 1 TO 4 DO // Loopar igenom månaderna januari-april *)
+    iVarDayForstamaj := iVarDayForstamaj + arrMonthDays[i]; //Addera dagar i tidigare månader
+END_FOR
+
+IF isLeapYear THEN
+    iVarDayForstamaj := iVarDayForstamaj + 1;
+END_IF
+
+// Beräkna sveriges nationaldag
+iVarNationaldag := 5; // Startvärde för 6 juni
+FOR i := 1 TO 5 DO // Loopar igenom månaderna januari-maj
+    iVarNationaldag := iVarNationaldag + arrMonthDays[i]; // Addera dagar i tidigare månader
+END_FOR
+IF isLeapYear THEN
+    iVarNationaldag := iVarNationaldag + 1;
+END_IF
+
+
+// Ger var värde för resp. dag
+iLangfredag 		:= iEastermDayOfYear - 2;
+iSkartorsdag	 	:= iEastermDayOfYear - 3;
+iPaskDagen			:= iEastermDayOfYear;
+iPaskafton 			:= iEastermDayOfYear - 1; 
+iAnnanDagPask 		:= iEastermDayOfYear + 1; 
+iKristihimmel 		:= iEastermDayOfYear + 39; 
+iPingstAfton		:= iEastermDayOfYear + 48; 
+iPingstDagen		:= iEastermDayOfYear + 49;
+iMidsommarDagen		:= iVarMidsommardagen1;
+iMidsommarAfton		:= iVarMidsommardagen1 - 1;
+iHalloween			:= iVarHalloweenDay;
+iJulafton			:= iVarDayOfYearCristmas - 1;
+iJuldagen			:= iVarDayOfYearCristmas;
+iAnnandagjul		:= iVarDayOfYearCristmas + 1;
+iTrettondag			:= 6;
+iNyarsafton			:= iVarDayOfYearCristmas + 6;
+iNyarsdagen			:= 1; 
+iForstamaj			:= iVarDayForstamaj;
+iNationaldag		:= iVarNationaldag;
+
+// Sätter bool för resp. dag
+bLangfredag 		:= (iDayOfYear = (iLangfredag));
+bSkartorsdag	 	:= (iDayOfYear = (iSkartorsdag));
+bPaskDagen			:= (iDayOfYear = (iPaskDagen));
+bPaskafton 			:= (iDayOfYear = (iPaskafton));
+bAnnanDagPask 		:= (iDayOfYear = (iAnnanDagPask));
+bKristihimmel 		:= (iDayOfYear = (iKristihimmel));
+bPingstAfton		:= (iDayOfYear = (iPingstAfton));
+bPingstDagen		:= (iDayOfYear = (iPingstDagen));
+bHalloween			:= (iDayOfYear = (iHalloween));
+bJulafton			:= (iDayOfYear = (iJulafton));
+bJuldagen			:= (iDayOfYear = (iJuldagen));
+bAnnandagjul		:= (iDayOfYear = (iAnnandagjul));
+bTrettondag			:= (iDayOfYear = (iTrettondag));
+bNyarsafton			:= (iDayOfYear = (iNyarsafton));
+bNyarsdagen			:= (iDayOfYear = (iNyarsdagen));
+bForstamaj			:= (iDayOfYear = (iForstamaj));
+bNationaldag		:= (iDayOfYear = (iNationaldag));
+bMidsommarDagen		:= (iDayOfYear = (iVarMidsommardagen1));
+bMidsommarAfton		:= (iDayOfYear = (iVarMidsommardagen1)-1);
+
+IF bLangfredag OR bSkartorsdag OR bPaskDagen OR	bPaskafton OR bAnnanDagPask OR bKristihimmel OR	bPingstAfton OR	bPingstDagen OR	bMidsommarDagen OR bMidsommarAfton OR bHalloween OR	bJulafton OR bJuldagen OR bAnnandagjul OR bTrettondag OR bNyarsafton OR	bNyarsdagen OR bForstamaj OR bNationaldag THEN
+bHelgDagAktiv:= TRUE; ELSE
+bHelgDagAktiv:= FALSE;
+END_IF	
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_SwedishHolidays">
+      <LineId Id="202" Count="3" />
+      <LineId Id="417" Count="0" />
+      <LineId Id="326" Count="0" />
+      <LineId Id="207" Count="36" />
+      <LineId Id="540" Count="1" />
+      <LineId Id="676" Count="26" />
+      <LineId Id="260" Count="0" />
+      <LineId Id="532" Count="1" />
+      <LineId Id="782" Count="7" />
+      <LineId Id="265" Count="1" />
+      <LineId Id="790" Count="7" />
+      <LineId Id="271" Count="1" />
+      <LineId Id="798" Count="6" />
+      <LineId Id="277" Count="3" />
+      <LineId Id="805" Count="17" />
+      <LineId Id="299" Count="9" />
+      <LineId Id="311" Count="8" />
+      <LineId Id="538" Count="1" />
+      <LineId Id="320" Count="0" />
+      <LineId Id="346" Count="1" />
+      <LineId Id="367" Count="2" />
+      <LineId Id="348" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

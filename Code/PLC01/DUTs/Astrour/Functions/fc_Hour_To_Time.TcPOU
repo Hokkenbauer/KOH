@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="fc_Hour_To_Time" Id="{edf313fe-cd28-404e-a055-5bb8b3aa1db0}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION fc_Hour_To_Time : Time
+VAR_INPUT
+		IN : REAL;
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fc_Hour_To_Time := DWORD_TO_TIME(REAL_TO_DWORD(IN * 3600000));]]></ST>
+    </Implementation>
+    <LineIds Name="fc_Hour_To_Time">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

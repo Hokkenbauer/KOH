@@ -1,0 +1,161 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_PID" Id="{f62001ba-158c-45c2-9075-82efde488e0f}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PID
+VAR_INPUT
+	bEn				: BOOL;				// Aktivera block
+	nPV				: DINT; 			// Ärvärde
+	nSP				: DINT; 			// Börvärde
+	nP				: DWORD;			// P-faktor (OBS! Skala 1/100)
+	nI				: DWORD;			// I-tid (s)
+	nD				: DWORD;			// D-tid (s)
+	nDF				: DWORD;			// Filter D-tid (s)
+	nMAX			: DINT; 			// Maxbegränsning
+	nMIN			: DINT; 			// Minbegränsning
+	nInitValue		: DINT := 0;		// Initialt värde
+	nDeactValue		: DINT := 0; 		// Värde vid inaktiverat block
+	bInvert			: BOOL := FALSE; 	// Invertera funktion (T.ex. för Kyla)
+END_VAR
+
+VAR_OUTPUT
+	nY				: DINT; 			// Styrsignal
+END_VAR
+
+VAR  
+	DPart			: BOOL;
+	FirstRun		: BOOL := TRUE;
+	tx				: DWORD; 
+	last			: DWORD;
+	K 				: LREAL := 1.0;	
+	KP 				: LREAL;
+	TN 				: LREAL;
+	TV 				: LREAL;
+	TD 				: LREAL;
+	Dd				: LREAL;
+	Cd				: LREAL;
+	YD				: LREAL;
+	YD_1			: LREAL;
+	E				: LREAL;
+	E_1				: LREAL;
+	Y				: LREAL;
+	YI				: LREAL;
+	LIM_L 			: LREAL;
+	LIM_H 			: LREAL;
+	E_last 			: LREAL;
+	CycleTime		: LREAL;
+	CycleTime_INT	: LREAL;
+	Initvalue		: LREAL;	
+	
+	fbRTRIG			: R_TRIG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+CycleTime_INT	:= TO_LREAL(TwinCAT_SystemInfoVarList._TaskInfo[GETCURTASKINDEXEX()].CycleTime) / 10000;
+CycleTime 		:= CycleTime_INT / 1000;
+tx 				:= F_PLC_MS();
+
+fbRTRIG(CLK := bEn);
+
+IF NOT bEn OR FirstRun OR fbRTRIG.Q THEN
+	
+	KP 			:= 0.0;
+	TN 			:= 0.0;
+	TV 			:= 0.0;
+	TD 			:= 0.0;
+	Dd			:= 0.0;
+	Cd			:= 0.0;
+	E 	:= E_1	:= 0.0;
+	YD	:= YD_1 := 0.0;
+	DPart		:= FALSE;
+	Initvalue	:= TO_LREAL(LIMIT((nMIN / 10), (nInitValue / 10), (nMAX / 10)));
+
+ELSE
+	// Save old values
+	IF DPart THEN
+		E_1	:= E;
+		YD_1 := YD;
+	END_IF
+	
+	KP		:= TO_LREAL(nP) / 1000;
+	TN		:= TO_LREAL(nI) / 10;
+	TV		:= TO_LREAL(nD) / 10;
+	TD		:= TO_LREAL(nDF) / 10;
+	LIM_L	:= TO_LREAL(nMin) / 10;
+	LIM_H	:= TO_LREAL(nMax) / 10;
+
+	IF Y < (LIM_L * 10) OR Y > (LIM_H * 10) THEN
+		KP 			:= 0.0;
+		TN 			:= 0.0;
+		TV 			:= 0.0;
+		TD 			:= 0.0;
+		Dd			:= 0.0;
+		Cd			:= 0.0;
+		E 	:= E_1	:= 0.0;
+		YD	:= YD_1 := 0.0;
+		DPart		:= FALSE;
+		Initvalue := LIMIT(LIM_L, (Y / 10), LIM_H); 
+	END_IF
+END_IF
+
+// Invert function
+IF NOT bInvert THEN
+	E := (nSP - nPV);
+ELSE
+	E := (nPV - nSP);	
+END_IF
+
+
+// Integrator
+IF tn = 0.0 OR NOT bEn THEN
+	YI := 0.0;
+ELSIF Y > (LIM_L * 10) AND Y < (LIM_H * 10) THEN
+	YI := (E + E_LAST) * 0.5E-3 * DWORD_TO_LREAL(tx - last) * (K / TN) + YI;
+	E_last := E;
+END_IF
+last := tx;
+
+
+// Add up integrator and linear part 
+Y := KP * (E + YI);
+
+
+// D-part
+IF TV > 0.0 AND TD > 0.0 THEN
+	Dd := ((KP * TV) / (TD + CycleTime / 2.0));
+	Cd := ((TD - CycleTime / 2.0) / (TD + CycleTime / 2.0));
+	DPart := TRUE;
+ELSE
+	Dd := 0.0;
+	Cd := 0.0;
+	DPart := FALSE;
+END_IF
+	
+// YD-part 
+IF DPart THEN
+	YD	:=  (Cd * YD_1 + Dd * (E - E_1));
+ELSE
+	YD	:= 0.0;
+END_IF
+																																		
+
+// Add differential part, initvalue and limit output Y 
+Y := LIMIT((LIM_L * 10), ((Y + YD + Initvalue) * 10), (LIM_H * 10));
+
+
+// Output
+IF NOT bEn THEN
+	nY := nDeactValue;
+ELSE
+	nY := TO_DINT(Y);
+END_IF
+
+FirstRun := FALSE;
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_PID">
+      <LineId Id="1304" Count="100" />
+      <LineId Id="1297" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

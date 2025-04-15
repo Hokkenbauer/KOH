@@ -1,0 +1,183 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_AstroUr" Id="{e845a48c-8fc2-4217-8fef-2e120463233d}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_AstroUr
+
+VAR_INPUT
+	rLatitude 				: REAL; // Latitud där anläggningen befinner sig
+	rLongitude 				: REAL; // Longitud där anläggningen befinner sig
+	iOffsetSunrise			: DINT;	// Offset för soluppgång i minuter
+	iOffsetSunset			: DINT;	// Offset för solnedgång i minuter
+END_VAR         			
+                			
+VAR_OUTPUT      			
+	strSunrise				: STRING(5); // SunRise som string
+	strSunset				: STRING(5); // Sunset som string
+	bSummertime				: BOOL; // Indikering sommartid
+	bDark					: BOOL; // Indikering solen har gått ner
+END_VAR
+
+VAR
+	fbSystemTime 			: FB_SystemTime;
+	                		
+	dDate 					: DATE; // Aktuellt datum
+	rSunPosMidday			: REAL; // Solens position mitt på dagen
+	tDelta					: TIME; // Dela, tiden från mitt på dagen till soluppgång/nedgång
+	rLatRad					: REAL; // Latitud omberäknad till radianer
+	todActSunRise 			: TOD; // Soluppgång aktuell dag
+	todActSunSet 			: TOD; // Solnedgång aktuell dag
+	todActTime				: TIME_OF_DAY; // Aktuellt klockslag	
+	todMidDay				: TOD; // Aktuell middagstid (när solen står i Zenit)
+	rSunAngleMidday 		: REAL; // Solens vinkel mitt på dagen	
+	dwSunSet				: DWORD; // Mellanvariabel för konvertering
+	dwSunRise				: DWORD; // Mellanvariabel för konvertering            	
+	rHeightAngle			: REAL := -0.83333333333; // Solens tim-vinkel
+	todSunRise				: TOD;
+	todSunSet				: TOD;
+	dtVarSystemTime 		: DATE_AND_TIME;
+	todVarTimeOfDay			: TIME_OF_DAY;
+	
+	dwSunRiseMinute			: DWORD;
+	dwSunRiseHour			: DWORD;
+	dwSunRiseTime			: DWORD;
+	
+	dwSunSetMinute			: DWORD;
+	dwSunSetHour			: DWORD;
+	dwSunSetTime			: DWORD;
+	
+	strHourSunRise			: STRING(2);
+	strMinuteSunRise		: STRING(2);  
+	strHourSunSet			: STRING(2);
+	strMinuteSunSet			: STRING(2);   
+END_VAR
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Anrop och variabelhanteringar
+fbSystemTime();
+
+dtVarSystemTime:= 	fbSystemTime.dtSystemTime;
+todActTime:= 		todVarTimeOfDay;
+dDate:= 			TO_DATE(dtVarSystemTime);
+todVarTimeOfDay:= 	TO_TOD (fbSystemTime.dtSystemTime); 
+rLatRad:=			rLatitude * 0.0174532925199433;
+todMidDay:=			fc_Sun_Midday(rLongitude, dDate);
+
+// Beräknar solposition
+rSunPosMidday := 0.40954 * SIN(0.0172 * (INT_TO_REAL(fc_Day_Of_Year(dDate)) - 79.35));
+rSunAngleMidday := fc_DEG(rSunPosMidday);
+
+// Sätter solvinkel
+IF rSunAngleMidday > 180.0 THEN
+	rSunAngleMidday := rSunAngleMidday - 360.0;
+END_IF;
+
+rSunAngleMidday := 90.0 - rLatitude + rSunAngleMidday;
+
+// Beräknar tid mellan solens högsta punkt och solnedgång resp. soluppgång
+tDelta := fc_Hour_To_Time(ACOS((SIN(fc_RAD(rHeightAngle)) - SIN(rLatRad) * SIN(rSunPosMidday)) / (COS(rLatRad) * COS(rSunPosMidday))) * 3.819718632);
+
+todActSunRise := todMidDay - tDelta;
+todActSunSet := todMidDay + tDelta;
+
+// Sommartid eller ej 
+bSummertime := fc_DST(UTC:= dtVarSystemTime);
+
+// Förskjutning om sommartid råder
+IF bSummertime THEN
+	todSunRise 	:= todActSunRise + T#2H + DINT_TO_TIME(iOffsetSunrise * 60000);
+	todSunSet	:= todActSunSet  + T#2H + DINT_TO_TIME(iOffsetSunset  * 60000); ELSE
+	todSunRise 	:= todActSunRise + T#1H + DINT_TO_TIME(iOffsetSunrise * 60000);
+	todSunSet	:= todActSunSet  + T#1H + DINT_TO_TIME(iOffsetSunset  * 60000);
+END_IF
+
+// Sätter bool om det är mörkt ute
+IF (todSunRise > todActTime) OR (todSunSet < todActTime) THEN
+	bDark := TRUE; ELSE
+	bDark := FALSE;	
+END_IF
+
+// Skapar STRING för att presentera soluppgång / solnedgång i SCADA/KOD
+
+// Soluppgång
+dwSunRiseHour:= TOD_TO_DWORD(todSunRise)/3600000;
+dwSunRiseMinute:= TOD_TO_DWORD(todSunRise)/60000;
+dwSunRiseTime:= dwSunRiseMinute -(60 * dwSunRiseHour);
+
+IF dwSunRiseHour < 10 THEN
+	strHourSunRise := concat ('0',DWORD_TO_STRING(dwSunRiseHour)); ELSE
+	strHourSunRise := DWORD_TO_STRING(dwSunRiseHour);	
+END_IF
+
+IF dwSunRiseTime < 10 THEN 
+	strMinuteSunRise := concat('0',DWORD_TO_STRING(dwSunRiseTime)); ELSE
+	strMinuteSunRise := DWORD_TO_STRING(dwSunRiseTime);
+END_IF
+
+// Solnedgång
+dwSunSetHour:= TOD_TO_DWORD(todSunSet)/3600000;
+dwSunSetMinute:= TOD_TO_DWORD(todSunSet)/60000;
+dwSunSetTime:= dwSunSetMinute -(60 * dwSunSetHour);
+
+IF dwSunSetHour < 10 THEN
+	strHourSunSet := concat ('0',DWORD_TO_STRING(dwSunSetHour)); ELSE
+	strHourSunSet := DWORD_TO_STRING(dwSunSetHour);	
+END_IF
+
+IF dwSunSetMinute < 10 THEN 
+	strMinuteSunSet := concat('0',DWORD_TO_STRING(dwSunSetTime)); ELSE
+	strMinuteSunSet := DWORD_TO_STRING(dwSunSetTime);
+END_IF
+
+// Klara strängar
+strSunRise:= concat(strHourSunRise,':');
+strSunRise:= concat(strSunRise, strMinuteSunRise);
+strSunSet:= concat(strHourSunSet,':');
+strSunSet:= concat(strSunSet, strMinuteSunSet);
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_AstroUr">
+      <LineId Id="186" Count="0" />
+      <LineId Id="169" Count="0" />
+      <LineId Id="187" Count="0" />
+      <LineId Id="167" Count="0" />
+      <LineId Id="184" Count="0" />
+      <LineId Id="55" Count="0" />
+      <LineId Id="188" Count="0" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="59" Count="0" />
+      <LineId Id="189" Count="0" />
+      <LineId Id="60" Count="2" />
+      <LineId Id="191" Count="0" />
+      <LineId Id="63" Count="1" />
+      <LineId Id="192" Count="2" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="197" Count="0" />
+      <LineId Id="195" Count="0" />
+      <LineId Id="66" Count="6" />
+      <LineId Id="196" Count="0" />
+      <LineId Id="73" Count="3" />
+      <LineId Id="78" Count="2" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="185" Count="0" />
+      <LineId Id="84" Count="1" />
+      <LineId Id="87" Count="1" />
+      <LineId Id="298" Count="1" />
+      <LineId Id="332" Count="0" />
+      <LineId Id="342" Count="13" />
+      <LineId Id="358" Count="0" />
+      <LineId Id="301" Count="0" />
+      <LineId Id="317" Count="12" />
+      <LineId Id="362" Count="0" />
+      <LineId Id="359" Count="1" />
+      <LineId Id="330" Count="1" />
+      <LineId Id="222" Count="3" />
+      <LineId Id="205" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

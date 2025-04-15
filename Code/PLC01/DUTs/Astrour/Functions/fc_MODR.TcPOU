@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="fc_MODR" Id="{783d0025-a7ed-4606-997e-1a2a6d758773}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION fc_MODR : real
+VAR_INPUT
+	IN : REAL;
+	DIVI : REAL;
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF divi = 0.0 THEN
+	fc_MODR := 0.0;
+ELSE
+	fc_MODR := in - DINT_TO_REAL(fc_Floor2(in / divi)) * divi;
+END_IF;
+]]></ST>
+    </Implementation>
+    <LineIds Name="fc_MODR">
+      <LineId Id="3" Count="4" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

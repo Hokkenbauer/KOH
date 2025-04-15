@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_Sel" Id="{ca697177-b81a-4e1e-b832-422d9b984acb}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Sel
+VAR_INPUT
+	diSelVal01			: DINT;		// Ingång 0
+	diSelVal02			: DINT;		// Ingång 1
+	diSelVal03			: DINT;		// Ingång 2
+	diSelVal04			: DINT;		// Ingång 3
+	bEnabelVal01		: BOOL;		// Aktiverar diSelVal01
+	bEnabelVal02		: BOOL;		// Aktiverar diSelVal02
+	bEnabelVal03		: BOOL;		// Aktiverar diSelVal03
+	bEnabelVal04		: BOOL;		// Aktiverar diSelVal04
+END_VAR
+VAR_OUTPUT
+	diOutPut			: DINT;		// Aktiverat värde
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF bEnabelVal01 THEN
+	diOutPut:=diSelVal01;
+ELSIF bEnabelVal02 AND NOT bEnabelVal01 THEN
+	diOutPut:=diSelVal02;
+ELSIF bEnabelVal03 AND NOT bEnabelVal01 OR bEnabelVal02 THEN
+	diOutPut:=diSelVal03;
+ELSIF bEnabelVal04 AND NOT bEnabelVal01 OR bEnabelVal02 OR bEnabelVal03 THEN
+	diOutPut:=diSelVal04;
+ELSE
+	diOutPut:=0;
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="FB_Sel">
+      <LineId Id="31" Count="9" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
