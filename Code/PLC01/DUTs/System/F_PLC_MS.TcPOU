@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="F_PLC_MS" Id="{06be9c76-6580-4a8a-a3f2-6acc2a68e606}" SpecialFunc="None">
+    <Declaration><![CDATA[(*
+:Beskrivning:	| Hämtar PLCns interna timer i Millisekunder.
+:Instruktioner:	|  
+
+:Versionshistorik:
++-------------+------------+----------------+------------+-------------------------------------------+
+|Datum        | Version    | Skapad under   | Författare | Kommentar                                 |
++=============+============+================+============+===========================================+
+|2020-02-21   | 1.0.0.1    | V3.1.4022.30   | CMC dev.   | Funktion skapad							 |
++-------------+------------+----------------+------------+-------------------------------------------+
+	
+*)
+FUNCTION F_PLC_MS : DWORD;	// Millisekunder
+VAR CONSTANT
+	N 			: INT := 0;
+	debug		: BOOL := 0;
+	offset		: DWORD := 0;
+END_VAR
+VAR
+	tx		 	: TIME;		// Timer i Millisekunder
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*
+
+Information om block:
+
+Källa: Oscat T_PLC_MS
+
+*)
+
+tx := TIME();
+F_PLC_MS := TIME_TO_DWORD(Tx);
+
+IF debug THEN
+	F_PLC_MS := (SHL(F_PLC_MS,N) OR SHL(DWORD#1,N)-1) + OFFSET;
+END_IF;
+]]></ST>
+    </Implementation>
+    <LineIds Name="F_PLC_MS">
+      <LineId Id="75" Count="5" />
+      <LineId Id="73" Count="1" />
+      <LineId Id="45" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="47" Count="2" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="16" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

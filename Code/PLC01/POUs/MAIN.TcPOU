@@ -7,7 +7,7 @@ VAR
 	fbAstroUr					: FB_AstroUr;
 	fbSystemTime 				: FB_SystemTime;
 	fbSwedishHolidays			: FB_SwedishHolidays;
-	fbGustavGlaadKOH			: FB_KOH;
+	fbKOHFunction				: FB_KOH;
 	
 	bActivateTimeChannel		: BOOL; // Detta är en kommentar
 	wMondayStartTime 			: WORD; // Detta är en kommentar
@@ -54,7 +54,40 @@ VAR
 	bNationaldagACT				: BOOL;
 	bHelgDagAktivACT 			: BOOL;
 	bAny						: BOOL; 
-	iDay			: INT;
+	iDay						: INT;
+	
+	// koh	
+	bVarEnableKOHFunction		: BOOL;
+	bVarBlockKOHFunction		: BOOL;
+	bVarExceptionKOH			: BOOL;
+	wVarMondayOn				: WORD;
+	wVarMondayOff				: WORD;
+	wVarTuesdayOn				: WORD;
+	wVarTuesdayOff				: WORD;
+	wVarWednesdayOn				: WORD;
+	wVarWednesdayOff			: WORD;
+	wVarThursdayOn				: WORD;
+	wVarThursdayOff				: WORD;
+	wVarFridayOn				: WORD;
+	wVarFridayOff				: WORD;
+	wVarSaturdayOn				: WORD;
+	wVarSaturdayOff				: WORD;
+	wVarSundayOn				: WORD;
+	wVarSundayOff 				: WORD;
+	diVarSystemCalcSetpoint 	: DINT;
+	diVarDownRampTime  			: DINT;
+	diVarSPEveningReduction 	: DINT;
+	diVarSPWeekendReduction 	: DINT;
+	diVarSPHolidayReduction 	: DINT;
+	diVarSPExceptionReduction  	: DINT;
+	diVarActualAverageRoomTemp 	: DINT;
+	diVarAllowedMinRoomTemp  	: DINT;
+	bVarKOHActive 				: BOOL;
+	bVarKOHBlocked 				: BOOL;
+	bVarAlarmBlocked			: BOOL;
+	bVarAlarmMinTemp 			: BOOL;
+	diVarKOHCalcOffset 			: DINT;
+	bVarRampTimeActive			: BOOL;
 	
 END_VAR
 
@@ -124,42 +157,51 @@ fbSwedishHolidays(
 
 
 iDay:=fc_Day_Of_Year(IDATE:=TO_DATE (dActDate) );
+
 	
 	
-	
-fbGustavGlaadKOH(
-	bEnableKOHFunction:= 			, 
-	bBlockKOHFunction:= 			, 
-	wMondayOn:= 					, 
-	wMondayOff:= 					, 
-	wTuesdayOn:= 					, 
-	wTuesdayOff:= 					, 
-	wWednesdayOn:= 					, 
-	wWednesdayOff:= 				, 
-	wThursdayOn:= 					, 
-	wThursdayOff:= 					, 
-	wFridayOn:= 					, 
-	wFridayOff:= 					, 
-	wSaturdayOn:= 					, 
-	wSaturdayOff:= 					, 
-	wSundayOn:= 					, 
-	wSundayOff:= 					, 
-	diSystemCalcSetpoint:= 			, 
-	diDownRampTime:= 				, 
-	diSPEveningReduction:= 			, 
-	diSPWeekendReduction:= 			, 
-	diSPHolidayReduction:= 			, 
-	diSPExceptionReduction:= 		, 
-	diAllowedMinRoomTemp:= 			, 
-	bKOHActive=> 					, 
-	bKOHBlocked=> 					, 
-	bRoomTempDeviationAlarmBlock=> 	, 
-	bAlarmBlocked=> 				, 
-	bAlarmMinTemp=> 				, 
-	diKOHCalcOffset=> 				, 
-	bRampTimeActive=> 				);
+fbKOHFunction(
+	bEnableKOHFunction:= 			bVarEnableKOHFunction, 
+	bBlockKOHFunction:= 			bVarBlockKOHFunction, 
+	bExceptionKOH:= 				bVarExceptionKOH, 
+	wMondayOn:= 					wVarMondayOn, 
+	wMondayOff:= 					wVarMondayOff, 
+	wTuesdayOn:= 					wVarTuesdayOn, 
+	wTuesdayOff:= 					wVarTuesdayOff, 
+	wWednesdayOn:= 					wVarWednesdayOn, 
+	wWednesdayOff:= 				wVarWednesdayOff, 
+	wThursdayOn:= 					wVarThursdayOn, 
+	wThursdayOff:= 					wVarThursdayOff, 
+	wFridayOn:= 					wVarFridayOn, 
+	wFridayOff:= 					wVarFridayOff, 
+	wSaturdayOn:= 					wVarSaturdayOn, 
+	wSaturdayOff:= 					wVarSaturdayOff, 
+	wSundayOn:= 					wVarSundayOn, 
+	wSundayOff:= 					wVarSundayOff, 
+	diSystemCalcSetpoint:= 			diVarSystemCalcSetpoint, 
+	diDownRampTime:= 				diVarDownRampTime, 
+	diSPEveningReduction:= 			diVarSPEveningReduction, 
+	diSPWeekendReduction:= 			diVarSPWeekendReduction, 
+	diSPHolidayReduction:= 			diVarSPHolidayReduction, 
+	diSPExceptionReduction:= 		diVarSPExceptionReduction, 
+	diActualAverageRoomTemp:= 		diVarActualAverageRoomTemp, 
+	diAllowedMinRoomTemp:= 			diVarAllowedMinRoomTemp, 
+	bKOHActive=> 					bVarKOHActive, 
+	bKOHBlocked=> 					bVarKOHBlocked, 
+	bAlarmBlocked=> 				bVarAlarmBlocked, 
+	bAlarmMinTemp=> 				bVarAlarmMinTemp, 
+	diKOHCalcOffset=> 				diVarKOHCalcOffset, 
+	bRampTimeActive=> 				bVarRampTimeActive);
 
 
+	
+	
+	
+	
+	
+	
+	
+	
 
 
 	]]></ST>
@@ -182,9 +224,13 @@ fbGustavGlaadKOH(
       <LineId Id="203" Count="0" />
       <LineId Id="106" Count="0" />
       <LineId Id="258" Count="3" />
-      <LineId Id="490" Count="29" />
+      <LineId Id="582" Count="30" />
       <LineId Id="262" Count="0" />
-      <LineId Id="486" Count="3" />
+      <LineId Id="486" Count="0" />
+      <LineId Id="613" Count="0" />
+      <LineId Id="487" Count="0" />
+      <LineId Id="614" Count="6" />
+      <LineId Id="488" Count="1" />
       <LineId Id="485" Count="0" />
     </LineIds>
   </POU>

@@ -81,6 +81,15 @@
     <Compile Include="DUTs\Select\FB_Sel.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DUTs\System\FB_SystemTime.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\System\FB_TimerPulseSec.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\System\F_PLC_MS.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="DUTs\Tidkanal\FB_TidKanalDrift.TcPOU">
       <SubType>Code</SubType>
     </Compile>
@@ -114,10 +123,6 @@
     <Folder Include="POUs" />
   </ItemGroup>
   <ItemGroup>
-    <PlaceholderReference Include="HECO Base">
-      <DefaultResolution>HECO Base, * (HECO Automation AB)</DefaultResolution>
-      <Namespace>HECO_Base</Namespace>
-    </PlaceholderReference>
     <PlaceholderReference Include="Tc2_IoFunctions">
       <DefaultResolution>Tc2_IoFunctions, * (Beckhoff Automation GmbH)</DefaultResolution>
       <Namespace>Tc2_IoFunctions</Namespace>

@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.11">
+  <POU Name="FB_TimerPulseSec" Id="{2611f89c-27f6-449d-a0e0-ecaf1fdaf1fb}" SpecialFunc="None">
+    <Declaration><![CDATA[(*
+:Beskrivning:	| Timern är igång så länge bStart är hög. bPulse pulsar när bStart går från FALSE till TRUE och när nTIME är uppnådd. När nTIME är uppnådd börjar timern räkna om.
+:Instruktioner:	|  
+
+:Versionshistorik:
++-------------+------------+----------------+------------+------------------------------------------+
+|Datum        | Version    | Skapad under   | Författare | Kommentar                                |
++=============+============+================+============+==========================================+
+|2020-02-21   | 1.0.0.1    | V3.1.4022.30   | CMC dev.   | Funktionsblock skapat					|
++-------------+------------+----------------+------------+------------------------------------------+
+	
+*)
+FUNCTION_BLOCK FB_TimerPulseSec
+VAR_INPUT
+	bStart 		: BOOL;  	// Aktivera timer
+	nTIME		: DWORD; 	// Tid mellan pulserna (s)
+END_VAR
+
+VAR_OUTPUT
+	bPulse		: BOOL; 	// Pulsutgång
+END_VAR
+
+VAR
+	Start		: BOOL;
+	init		: BOOL;
+	tx			: DWORD;
+	last		: DWORD;
+	ms			: DWORD;
+	Sec			: UDINT;
+	
+	R_TRIG		: R_TRIG;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*
+
+Information om block:
+
+Källa: Oscat OnTime
+
+*)
+
+// Read system time
+tx := F_PLC_MS();
+
+// Make sure the first cycle works correctly
+IF NOT init OR NOT bStart THEN
+	init := TRUE;
+	ms := 0;
+ELSIF bStart THEN
+	// Add the current milliseconds
+	ms := (tx - last) + ms;
+	IF ms >= 100 THEN
+		Sec := Sec + 1;
+		ms := ms - 100;
+	END_IF
+END_IF
+
+IF NOT bStart THEN
+	Sec := 0;
+END_IF
+last := tx;
+
+IF bStart AND NOT Start THEN
+	R_TRIG(CLK := bStart, Q => bPulse);
+	Start := TRUE;
+ELSIF bStart AND Sec >= TO_UDINT(nTIME) THEN
+	bPulse := TRUE;
+	Sec := 0;
+ELSIF bStart THEN	
+	bPulse := FALSE;
+	Sec := Sec;
+ELSE
+	bPulse := FALSE;
+	Start := FALSE;
+	R_TRIG(CLK := FALSE);
+END_IF
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_TimerPulseSec">
+      <LineId Id="444" Count="5" />
+      <LineId Id="442" Count="1" />
+      <LineId Id="176" Count="5" />
+      <LineId Id="183" Count="0" />
+      <LineId Id="187" Count="6" />
+      <LineId Id="195" Count="0" />
+      <LineId Id="245" Count="0" />
+      <LineId Id="242" Count="2" />
+      <LineId Id="196" Count="0" />
+      <LineId Id="301" Count="0" />
+      <LineId Id="397" Count="12" />
+      <LineId Id="382" Count="0" />
+      <LineId Id="239" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

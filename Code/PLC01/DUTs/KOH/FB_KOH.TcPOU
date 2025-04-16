@@ -35,7 +35,6 @@ END_VAR
 VAR_OUTPUT	
 	bKOHActive						: BOOL; // KOH-funktion aktiv
 	bKOHBlocked						: BOOL; // KOH-funktion blockerad från annan källa
-	bRoomTempDeviationAlarmBlock	: BOOL; // 
 	bAlarmBlocked					: BOOL; // Alarm, KOH-funktion blockerad [B]
 	bAlarmMinTemp					: BOOL; // Lägsta rumstemperaturen uppnådd [B]
 	diKOHCalcOffset					: DINT; // Aktuellt nytt beräknat börvärde
@@ -43,6 +42,8 @@ VAR_OUTPUT
 END_VAR
 
 VAR
+// Sytemtid	
+	fbSystemTime 					: FB_SystemTime;
 // Funktionsblock
 	fbTidkanalKOH					: FB_TidKanalDrift; // Tidkanalsblock
 	fbSwedishHolidays				: FB_SwedishHolidays; // Block för beräkning av svenska helgdagar
@@ -52,7 +53,11 @@ VAR
 
 // Lokala variabler	
 	bVarTidKanalAktiv				: BOOL; // Lokal variabel, tidkanal för drift aktiv
-	dActDate						: DATE_AND_TIME; 
+	dActDate						: DATE_AND_TIME; 	
+	dtVarSystemTime 				: DATE_AND_TIME;
+	todVarTimeOfDay					: TIME_OF_DAY;
+	dDate 							: DATE; // Aktuellt datum
+	todActTime						: TIME_OF_DAY; // Aktuellt klockslag
 	iVarActDay						: INT; // Lokal variabel, aktuell dag. Måndag=1, Tisdag=2, Onsdag=3, Torsdag=4, Fredag=5, Lördag=6, Söndag=0
 	bVarVardagAct					: BOOL; // Lokal variabel, Måndag-fredag aktiv
 	bVarVeckoslutAct				: BOOL; // Lokal variabel, vanlig lördag-söndag aktiv
@@ -68,7 +73,12 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// Kör hela KOH om det inte är blockerat
+      <ST><![CDATA[fbSystemTime();
+dtVarSystemTime:= 	fbSystemTime.dtSystemTime;
+todActTime:= 		todVarTimeOfDay;
+dDate:= 			TO_DATE(dtVarSystemTime);
+todVarTimeOfDay:= 	TO_TOD (fbSystemTime.dtSystemTime); 
+// Kör hela KOH om det inte är blockerat
 IF NOT bBlockKOHFunction THEN
 
 //===========Startar KOH om pumpen för värmesystemet är i drift===========//
@@ -98,7 +108,7 @@ fbTidkanalKOH(
 	
 //=========== Aktiverar mån-fre, lör-sön, helgdag, undantag i fallande prio===========//
 // Beräknar dag 0-6 
-iVarActDay:=fc_Day_Of_Year(IDATE:=TO_DATE (dActDate));
+iVarActDay:=fc_Day_Of_Year(IDATE:=TO_DATE (dDate));
 // Beräknar mån-fre 1-5
 IF (iVarActDay >0 AND iVarActDay <5) AND NOT bVarHelgdagAktiv THEN
 	bVarVardagAct:= TRUE;	
@@ -173,40 +183,50 @@ fbRamp(
 	diRampUpTime:= 		0, 
 	diRampDownTime:= 	diDownRampTime, 
 	diOutPutValue=> 	diVarOffsetValue, 
-	bActive=> 			, 
+	bActive=> 			bRampTimeActive, 
 	bUpDown=> 			);
 
+// Larm för låg rumstemperatur	
 IF diActualAverageRoomTemp <= diAllowedMinRoomTemp THEN
 	bAlarmMinTemp:= TRUE; ELSE	
 	bAlarmMinTemp:= FALSE;
 END_IF
-	
+
 // PID som rampar ner förskjutning vid "kallt" i rum
 fbPIDCascade(
-	bEn:= 				bVarTKVardagAct OR bVarTKVeckoslutAct OR bVarHelgdagAktiv OR bVarTKExceptionAct, 
-	nPV:= 				diActualAverageRoomTemp, 
+	bEn:= 				bVarTKVardagAct OR bVarTKVeckoslutAct OR bVarHelgdagAktiv OR bVarTKExceptionAct,
+	nPV:= 				diActualAverageRoomTemp,
 	nSP:= 				diAllowedMinRoomTemp, 
 	nP:= 				, 
 	nI:= 				, 
 	nD:= 				, 
 	nDF:= 				, 
-	nMAX:= 				diVarOffsetValue, 
-	nMIN:= 				0, 
-	nInitValue:= 		, 
-	nDeactValue:= 		diVarOffsetValue, 
-	bInvert:= 			, 
+	nMAX:= 				diVarOffsetValue,
+	nMIN:= 				0,
+	nInitValue:= 		,
+	nDeactValue:= 		diVarOffsetValue,
+	bInvert:= 			,
 	nY=> 				);
 
 
-	
-	
-	
+diKOHCalcOffset:= (diSystemCalcSetpoint - (diVarOffsetValue - fbPIDCascade.nY));
+
+
+
+
 END_IF
+
 END_IF
+bAlarmBlocked:= 	bBlockKOHFunction;
+bKOHBlocked:= 		bBlockKOHFunction;
+diKOHCalcOffset:= 	diSystemCalcSetpoint;
 
 ]]></ST>
     </Implementation>
     <LineIds Name="FB_KOH">
+      <LineId Id="467" Count="0" />
+      <LineId Id="469" Count="2" />
+      <LineId Id="468" Count="0" />
       <LineId Id="298" Count="0" />
       <LineId Id="296" Count="1" />
       <LineId Id="68" Count="0" />
@@ -264,6 +284,7 @@ END_IF
       <LineId Id="282" Count="0" />
       <LineId Id="256" Count="5" />
       <LineId Id="253" Count="0" />
+      <LineId Id="448" Count="0" />
       <LineId Id="373" Count="1" />
       <LineId Id="376" Count="0" />
       <LineId Id="378" Count="0" />
@@ -271,13 +292,18 @@ END_IF
       <LineId Id="354" Count="1" />
       <LineId Id="360" Count="12" />
       <LineId Id="359" Count="0" />
-      <LineId Id="356" Count="1" />
-      <LineId Id="254" Count="0" />
-      <LineId Id="132" Count="1" />
-      <LineId Id="148" Count="0" />
+      <LineId Id="446" Count="0" />
+      <LineId Id="449" Count="1" />
+      <LineId Id="464" Count="0" />
+      <LineId Id="457" Count="0" />
       <LineId Id="299" Count="0" />
+      <LineId Id="445" Count="0" />
       <LineId Id="149" Count="0" />
+      <LineId Id="455" Count="0" />
       <LineId Id="57" Count="0" />
+      <LineId Id="461" Count="0" />
+      <LineId Id="452" Count="2" />
+      <LineId Id="451" Count="0" />
     </LineIds>
   </POU>
 </TcPlcObject>
